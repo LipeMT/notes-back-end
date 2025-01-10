@@ -17,13 +17,20 @@ class UsersController {
             throw new AppError("Nome é obrigatório")
         }
 
+        if (!email) {
+            throw new AppError("Email é obrigatório")
+        }
+
+        if (!password) {
+            throw new AppError("Senha é obrigatória")
+        }
+
         const hashedPasswod = await hash(password, 8)
 
         await database.run("INSERT INTO users (name, email, password) VALUES (?, ?, ?)", [name, email, hashedPasswod])
 
         res.status(201).json()
     }
-
     async update(req, res) {
         const { name, email, password, old_password } = req.body
 
