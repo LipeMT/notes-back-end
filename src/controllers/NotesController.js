@@ -2,35 +2,39 @@ const knex = require('../database/knex')
 
 class NotesController {
     async create(req, res) {
-        const { title, description, tags, links } = req.body
+        const { title, description, tags, links } = req.body;
         const user_id = req.user.id;
 
         const [note_id] = await knex("notes").insert({
             title,
             description,
             user_id
-        })
+        });
 
-        const linksInsert = links.map(link => {
-            return {
-                note_id,
-                url: link
-            }
-        })
+        if (links && links.length > 0) {
+            const linksInsert = links.map(link => {
+                return {
+                    note_id,
+                    url: link
+                };
+            });
 
-        await knex("links").insert(linksInsert)
+            await knex("links").insert(linksInsert);
+        }
 
-        const tagsInsert = tags.map(name => {
-            return {
-                note_id,
-                name,
-                user_id
-            }
-        })
+        if (tags && tags.length > 0) {
+            const tagsInsert = tags.map(name => {
+                return {
+                    note_id,
+                    name,
+                    user_id
+                };
+            });
 
-        await knex("tags").insert(tagsInsert)
+            await knex("tags").insert(tagsInsert);
+        }
 
-        return res.status(201).json()
+        return res.status(201).json();
     }
 
     async show(req, res) {
@@ -60,7 +64,7 @@ class NotesController {
     }
 
     async list(req, res) {
-        const {  title, tags } = req.query
+        const { title, tags } = req.query
 
         const user_id = req.user.id
 
@@ -80,6 +84,7 @@ class NotesController {
                 .whereLike("notes.title", `%${title}%`)
                 .whereIn("name", filterTags)
                 .innerJoin("notes", "notes.id", "tags.note_id")
+                .groupBy("notes.id")
                 .orderBy("notes.title")
 
         } else {
@@ -94,10 +99,10 @@ class NotesController {
 
         const notesWithTags = notes.map(note => {
             const noteTags = userTags.filter(userTag => userTag.note_id === note.id);
-            
+
             return {
-               ...note,
-               tags: noteTags
+                ...note,
+                tags: noteTags
             }
         })
 
